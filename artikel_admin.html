@@ -24,7 +24,7 @@
         });
 
         window.handleLogout = async function() {
-            if (!confirm("Yakin mau logout bray?")) return;
+            if (!confirm("Yakin mau logout?")) return;
             await supabaseClient.auth.signOut();
             window.location.replace("index.html");
         };
@@ -224,7 +224,7 @@
         <header class="topbar">
             <div class="search-container">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="searchInput" placeholder="Cari artikel gizi bray...">
+                <input type="text" id="searchInput" placeholder="Cari artikel gizi">
             </div>
             <div class="topbar-right">
                 <button class="notification-btn"><i class="fa-regular fa-bell"></i></button>
@@ -511,12 +511,12 @@
         }
 
         async function hapusArtikel(id) {
-            const confirmDelete = confirm("Hapus artikel ini secara permanen bray?");
+            const confirmDelete = confirm("Hapus artikel ini secara permanen?");
             if (confirmDelete) {
                 try {
                     const { error } = await supabaseClient.from('articles').delete().eq('id', id);
                     if (error) throw error;
-                    alert("Artikel berhasil dihapus bray!");
+                    alert("Artikel berhasil dihapus!");
                     loadData(); 
                 } catch (error) {
                     alert("Gagal menghapus artikel: " + error.message);
@@ -550,7 +550,7 @@
 
                 document.getElementById('editFotoArtikel').value = '';
             } catch(error) {
-                alert("Gagal memuat detail artikel bray: " + error.message);
+                alert("Gagal memuat detail artikel: " + error.message);
                 tutupModal();
             }
         }
