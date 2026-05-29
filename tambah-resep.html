@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiziBunda - Tambah Resep</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // ===== ADMIN ROLE GUARD =====
+        (function() {
+            const SUPABASE_URL = "https://zmnrusboixvljkhyisuu.supabase.co";
+            const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptbnJ1c2JvaXh2bGpraHlpc3V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODMyNjIsImV4cCI6MjA5NDA1OTI2Mn0.73-guULNTIoFZinP_OijbR9E6qPJ4d2hGLwFZSLtEjw";
+            const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+            async function guardAdmin() {
+                // Cek sesi dulu
+                const { data: { session } } = await _sb.auth.getSession();
+                if (!session) {
+                    window.location.replace("login_admin.html");
+                    return;
+                }
+                // Cek role di tabel profiles — harus 'admin'
+                const { data: profile } = await _sb
+                    .from("profiles")
+                    .select("role")
+                    .eq("id", session.user.id)
+                    .single();
+
+                if (!profile || profile.role !== "admin") {
+                    await _sb.auth.signOut();
+                    alert("Akses ditolak. Halaman ini khusus admin.");
+                    window.location.replace("login_admin.html");
+                }
+            }
+            guardAdmin();
+
+            window.handleLogout = async function() {
+                if (!confirm("Yakin mau logout?")) return;
+                await _sb.auth.signOut();
+                window.location.replace("login_admin.html");
+            };
+        })();
+    </script>
+
+    <style>
+        /* === VARIABLES (Gabungan dari Admin & Tambah Resep) === */
+        :root {
+            --primary-teal: #23a495;
+            --light-teal: #eef8f6;
+            --bg-gray: #f8f9fa;
+            --card-gray: #e0e0e0;
+            --text-dark: #333333;
+            --text-muted: #777777;
+            --tag-green: #7cb342;
+            --tag-yellow: #fbc02d;
+            --tag-blue: #29b6f6;
+            --danger-red: #e53935;
+            
+            /* Khusus Tambah Resep */
+            --bg-card-form: #d9d9d9;
+            --btn-green: #4db6a5;
+            --btn-green-hover: #3c9485;
+            --nutrisi-bg: #bbf1e7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            display: flex;
+            background-color: #ffffff;
+            color: var(--text-dark);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- SCROLLBAR --- */
+        ::-webkit-scrollbar { width: 8px; height: 8px; } 
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; } 
+        ::-webkit-scrollbar-thumb { background: var(--primary-teal); border-radius: 10px; } 
+
+        /* =========================================================
+           SIDEBAR & TOPBAR (SAMA PERSIS DENGAN RESEP_ADMIN)
+           ========================================================= */
+        .sidebar {
+            width: 260px;
+            background-color: var(--primary-teal);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 30px 20px;
+            border-top-right-radius: 30px;
+            border-bottom-right-radius: 30px;
+            height: 100%;
+            flex-shrink: 0;
+        }
+
+        .sidebar-top h2 {
+            color: #d4e157;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            padding-left: 15px;
+        }
+
+        .menu-list { list-style: none; }
+        .menu-item { margin-bottom: 10px; }
+        .menu-item a {
+            display: flex; align-items: center; gap: 15px;
+            color: #ffffff; text-decoration: none; padding: 12px 15px;
+            font-size: 16px; font-weight: 500; border-radius: 10px; transition: all 0.3s ease;
+        }
+        .menu-item a:hover { background-color: rgba(255, 255, 255, 0.1); }
+        .menu-item.active a { background-color: #ffffff; color: var(--primary-teal); font-weight: 600; }
+
+        .logout-btn {
+            background-color: var(--danger-red); color: white; border: none; padding: 12px;
+            border-radius: 12px; width: 100%; display: flex; align-items: center; justify-content: center;
+            gap: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s;
+        }
+        .logout-btn:hover { background-color: #c62828; }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; height: 100%; overflow-y: auto; }
+
+        .topbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 40px; background-color: white; border-bottom: 1px solid #eeeeee;
+        }
+        .search-container { position: relative; width: 500px; }
+        .search-container i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .search-container input {
+            width: 100%; padding: 10px 10px 10px 45px; border-radius: 25px;
+            border: none; background-color: #e0e0e0; font-size: 14px; outline: none;
+        }
+        .topbar-right { display: flex; align-items: center; gap: 25px; }
+        .notification-btn { background: none; border: none; font-size: 20px; color: var(--text-dark); cursor: pointer; }
+        .profile-icon { font-size: 32px; color: var(--text-dark); cursor: pointer; }
+
+        /* =========================================================
+           KONTEN FORM TAMBAH RESEP
+           ========================================================= */
+        .page-content { padding: 30px 40px; padding-bottom: 60px; } 
+        .page-title { font-size: 24px; font-weight: 600; margin-bottom: 25px; color: var(--text-dark); } 
+        .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        
+        .card { background-color: var(--bg-card-form); border-radius: 15px; padding: 25px; margin-bottom: 20px; } 
+        .card-title { font-size: 18px; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; color: var(--text-dark); } 
+        .card-title i { color: #555; }
+        
+        .upload-area { border: 2px dashed #999; background-color: white; border-radius: 10px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; margin-bottom: 20px; position: relative; } 
+        .upload-area:hover { border-color: var(--primary-teal); background-color: #f8fdfc; } 
+        .upload-area i { font-size: 30px; color: #4a7c59; margin-bottom: 10px; } 
+        .upload-area h4 { color: #4a7c59; font-size: 18px; margin-bottom: 5px; font-weight: 600;} 
+        .upload-area p { font-size: 12px; color: var(--text-muted); }
+        
+        .form-group { margin-bottom: 15px; } 
+        .form-control { width: 100%; padding: 12px 15px; border: 1px solid transparent; border-radius: 8px; font-size: 14px; outline: none; background-color: white; transition: all 0.3s ease; } 
+        .form-control:focus, .form-control:hover { border-color: var(--primary-teal); box-shadow: 0 0 8px rgba(35, 164, 149, 0.2); }
+        
+        .custom-select-wrapper { position: relative; user-select: none; width: 100%; } 
+        .custom-select-trigger { display: flex; justify-content: space-between; align-items: center; cursor: pointer; color: var(--text-muted); } 
+        .custom-select-trigger .arrow-icon { color: #666; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); } 
+        .custom-options { position: absolute; top: calc(100% + 8px); left: 0; right: 0; background-color: white; border-radius: 10px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); list-style: none; z-index: 99; overflow: hidden; opacity: 0; visibility: hidden; transform: translateY(-15px); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); } 
+        .custom-select-wrapper.open .custom-options { opacity: 1; visibility: visible; transform: translateY(0); } 
+        .custom-select-wrapper.open .arrow-icon { transform: rotate(-180deg); } 
+        .custom-select-wrapper.open .custom-select-trigger { border-color: var(--primary-teal); box-shadow: 0 0 8px rgba(35, 164, 149, 0.2); } 
+        .custom-options li { padding: 12px 15px; font-size: 14px; color: var(--text-dark); cursor: pointer; transition: background 0.2s ease, color 0.2s ease; border-bottom: 1px solid #f1f1f1; } 
+        .custom-options li:hover { background-color: var(--nutrisi-bg); color: var(--primary-teal); font-weight: 500; } 
+        .custom-options li.safe-option { color: var(--primary-teal); font-weight: 600; }
+        
+        textarea.form-control { resize: vertical; min-height: 150px; } 
+        .input-with-icon { position: relative; } 
+        .input-with-icon i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #666; } 
+        .input-with-icon input { padding-left: 40px; }
+        
+        .tags-label { font-size: 14px; font-weight: 600; margin-bottom: 10px; display: block; } 
+        .tags-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; } 
+        .tag { background-color: white; color: #555; padding: 6px 15px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; border: 1px solid transparent; } 
+        .tag:hover { border-color: var(--tag-green); transform: translateY(-2px); } 
+        .tag.active { background-color: var(--tag-green); color: white; font-weight: 600; }
+        
+        .nutrition-section { background-color: var(--nutrisi-bg); border-radius: 15px; padding: 20px; } 
+        .nutrition-title { font-size: 16px; font-weight: 600; margin-bottom: 15px; } 
+        .nutrition-boxes { display: flex; gap: 10px; flex-wrap: wrap;} 
+        .nutri-box { flex: 1; min-width: 65px; padding: 15px 5px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; justify-content: center; } 
+        .nutrisi-input { width: 100%; background: transparent; border: none; text-align: center; font-size: 22px; font-weight: 700; color: #333; outline: none; margin-bottom: 2px; font-family: 'Poppins', sans-serif;} 
+        .nutrisi-input::placeholder { color: rgba(0,0,0,0.3); }
+        .nutri-box p { font-size: 11px; color: #555; font-weight: 500;} 
+        .box-protein { background-color: #aed581; } .box-lemak { background-color: #e6dd8f; } .box-besi { background-color: #4fc3f7; } .box-kalori { background-color: #ffcc80; }
+        
+        .btn-save { background-color: var(--btn-green); color: white; width: 100%; padding: 15px; border: none; border-radius: 30px; font-size: 20px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; margin-top: 10px; font-family: 'Poppins', sans-serif;} 
+        .btn-save:hover { background-color: var(--primary-teal); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(35, 164, 149, 0.4); } 
+        .btn-save:disabled { background-color: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <h2>GiziBunda</h2>
+            <ul class="menu-list">
+                <li class="menu-item"><a href="#"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
+                <li class="menu-item active"><a href="resep_admin.html"><i class="fa-solid fa-utensils"></i> Resep</a></li>
+                <li class="menu-item"><a href="#"><i class="fa-solid fa-book-open"></i> Artikel</a></li>
+            </ul>
+        </div>
+        <button class="logout-btn" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div class="search-container">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" placeholder="Cari data, resep, artikel">
+            </div>
+            <div class="topbar-right">
+                <button class="notification-btn"><i class="fa-regular fa-bell"></i></button>
+                <i class="fa-solid fa-circle-user profile-icon"></i>
+            </div>
+        </header>
+
+        <section class="page-content">
+            <h1 class="page-title">Upload Resep baru/ Edit resep</h1>
+
+            <div class="content-grid">
+                
+                <div class="left-col">
+                    <div class="card">
+                        <div class="card-title">Media</div>
+                        
+                        <div class="upload-area" id="uploadArea">
+                            <i class="fas fa-cloud-upload-alt" id="uploadIcon"></i>
+                            <h4 id="uploadText">Upload foto makanan</h4>
+                            <p id="uploadSubtext">Drag and drop or click to browse (Max 5MB, JPG/PNG)</p>
+                            <input type="file" id="inputFile" accept="image/png, image/jpeg" style="display: none;">
+                        </div>
+
+                        <div class="card-title">
+                            <i class="fas fa-info-circle"></i> Informasi
+                        </div>
+
+                        <div class="form-group">
+                            <input type="text" id="inputJudul" class="form-control" placeholder="Masukan Judul resep">
+                        </div>
+
+                        <div class="form-group">
+                            <span class="tags-label">Kategori umur</span>
+                            <div class="tags-container" id="kategoriUmurContainer">
+                                <span class="tag active" data-val="0-6 Bulan">0-6 Bulan</span>
+                                <span class="tag" data-val="6-8 Bulan">6-8 Bulan</span>
+                                <span class="tag" data-val="8-12 Bulan">8-12 Bulan</span>
+                                <span class="tag" data-val="12-24 Bulan">12-24 Bulan</span>
+                                <span class="tag" data-val="2-5 Tahun">2-5 Tahun</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="tags-label">Kategori Alergi (Opsional)</label>
+                            <div class="custom-select-wrapper" id="alergiDropdown">
+                                <div class="custom-select-trigger form-control">
+                                    <span id="alergiSelectedText">Pilih kategori alergi...</span>
+                                    <i class="fas fa-chevron-down arrow-icon"></i>
+                                </div>
+                                <ul class="custom-options">
+                                    <li data-val="Alergi Seafood">Alergi Seafood</li>
+                                    <li data-val="Telur">Telur</li>
+                                    <li data-val="Susu Sapi">Susu Sapi</li>
+                                    <li data-val="Ikan">Ikan</li>
+                                    <li data-val="Kacang-kacangan">Kacang-kacangan</li>
+                                    <li data-val="Gandum">Gandum</li>
+                                    <li class="safe-option" data-val="Bebas Alergi (Aman)">Bebas Alergi (Aman)</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="input-with-icon">
+                                <i class="far fa-clock"></i>
+                                <input type="text" id="inputWaktu" class="form-control" placeholder="Waktu Masak (Contoh: 15 m)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="nutrition-section">
+                        <h3 class="nutrition-title">Parameter nutrisi</h3>
+                        <div class="nutrition-boxes">
+                            <div class="nutri-box box-kalori">
+                                <input type="text" id="inputKalori" class="nutrisi-input" placeholder="0kkal">
+                                <p>Kalori</p>
+                            </div>
+                            <div class="nutri-box box-protein">
+                                <input type="text" id="inputProtein" class="nutrisi-input" placeholder="0g">
+                                <p>Protein</p>
+                            </div>
+                            <div class="nutri-box box-lemak">
+                                <input type="text" id="inputLemak" class="nutrisi-input" placeholder="0g">
+                                <p>Lemak</p>
+                            </div>
+                            <div class="nutri-box box-besi">
+                                <input type="text" id="inputBesi" class="nutrisi-input" placeholder="0,0mg">
+                                <p>Zat besi</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="right-col">
+                    <div class="card">
+                        <div class="card-title">Detail Resep</div>
+                        
+                        <div class="form-group">
+                            <label class="tags-label" style="font-weight: 500;">Bahan-bahan</label>
+                            <textarea id="inputBahan" class="form-control" placeholder="Masukan Bahan-bahan, satu per baris (Tekan Enter tiap ganti bahan)"></textarea>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 20px;">
+                            <label class="tags-label" style="font-weight: 500;">Cara memasak</label>
+                            <textarea id="inputCara" class="form-control" placeholder="Deskripsikan cara memasak step by step" style="min-height: 250px;"></textarea>
+                        </div>
+                    </div>
+
+                    <button class="btn-save" id="btnSimpan">Simpan Resep</button>
+                    
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            
+            // ==========================================
+            // 1. LOGIKA UI (Dijalankan Duluan Biar Gak Ngefreeze)
+            // ==========================================
+            let selectedKategoriUmur = '0-6 Bulan';
+            let selectedKategoriAlergi = null;
+            let selectedFile = null;
+
+            // Logika Klik Kategori Umur
+            const tags = document.querySelectorAll('#kategoriUmurContainer .tag');
+            tags.forEach(tag => {
+                tag.addEventListener('click', function() {
+                    tags.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedKategoriUmur = this.getAttribute('data-val');
+                });
+            });
+
+            // Logika Klik Dropdown Alergi
+            const dropdown = document.getElementById('alergiDropdown');
+            const trigger = dropdown.querySelector('.custom-select-trigger');
+            const options = dropdown.querySelectorAll('.custom-options li');
+            const selectedText = document.getElementById('alergiSelectedText');
+
+            if(trigger && dropdown) {
+                trigger.addEventListener('click', (e) => { 
+                    e.stopPropagation(); 
+                    dropdown.classList.toggle('open'); 
+                });
+            }
+
+            options.forEach(option => {
+                option.addEventListener('click', function() {
+                    selectedKategoriAlergi = this.getAttribute('data-val');
+                    selectedText.textContent = this.textContent;
+                    selectedText.style.color = '#333';
+                    dropdown.classList.remove('open');
+                });
+            });
+
+            window.addEventListener('click', (e) => { 
+                if (dropdown && !dropdown.contains(e.target)) dropdown.classList.remove('open'); 
+            });
+
+            // Logika Preview Gambar
+            const uploadArea = document.getElementById('uploadArea');
+            const inputFile = document.getElementById('inputFile');
+            if (uploadArea && inputFile) {
+                uploadArea.addEventListener('click', () => inputFile.click());
+                inputFile.addEventListener('change', function() {
+                    if (this.files && this.files[0]) {
+                        selectedFile = this.files[0];
+                        document.getElementById('uploadIcon').className = 'fas fa-check-circle';
+                        document.getElementById('uploadIcon').style.color = 'var(--primary-teal)';
+                        document.getElementById('uploadText').innerText = selectedFile.name;
+                        document.getElementById('uploadSubtext').innerText = 'File siap diupload';
+                    }
+                });
+            }
+
+            // ==========================================
+            // 2. INISIALISASI SUPABASE
+            // ==========================================
+            const SUPABASE_URL = 'https://zmnrusboixvljkhyisuu.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptbnJ1c2JvaXh2bGpraHlpc3V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODMyNjIsImV4cCI6MjA5NDA1OTI2Mn0.73-guULNTIoFZinP_OijbR9E6qPJ4d2hGLwFZSLtEjw';
+            
+            let supabaseClient = null; 
+            
+            try {
+                if (typeof supabase !== 'undefined') {
+                    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                } else {
+                    console.error("Gagal memuat Supabase. Coba matikan AdBlocker/cek internet.");
+                }
+            } catch (error) {
+                console.error("Terjadi masalah saat inisiasi database:", error);
+            }
+
+            // ==========================================
+            // 3. LOGIKA TOMBOL SIMPAN
+            // ==========================================
+            const btnSimpan = document.getElementById('btnSimpan');
+            if (btnSimpan) {
+                btnSimpan.addEventListener('click', async function() {
+                    
+                    if (!supabaseClient) {
+                        alert("Koneksi ke Supabase belum siap! Pastikan perangkat tersambung internet.");
+                        return;
+                    }
+
+                    // Ambil isi input
+                    const judul = document.getElementById('inputJudul').value.trim();
+                    const waktu = document.getElementById('inputWaktu').value.trim();
+                    const kalori = document.getElementById('inputKalori').value.trim();
+                    const protein = document.getElementById('inputProtein').value.trim();
+                    const lemak = document.getElementById('inputLemak').value.trim();
+                    const besi = document.getElementById('inputBesi').value.trim();
+                    
+                    const bahanRaw = document.getElementById('inputBahan').value;
+                    const bahanArray = bahanRaw.split('\n').map(b => b.trim()).filter(b => b !== '');
+                    const cara = document.getElementById('inputCara').value.trim();
+
+                    if(!judul || !waktu || !cara || bahanArray.length === 0) {
+                        alert("Harap lengkapi Judul, Waktu Masak, Bahan-bahan, dan Cara Memasak!");
+                        return;
+                    }
+
+                    btnSimpan.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+                    btnSimpan.disabled = true;
+
+                    try {
+                        let finalImageUrl = 'https://via.placeholder.com/400x300.png?text=Resep+GiziBunda';
+
+                        // --- LOGIKA UPLOAD GAMBAR KE SUPABASE STORAGE ---
+                        if (selectedFile) {
+                            const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+                            if (!allowedMimeTypes.includes(selectedFile.type)) {
+                                alert("Gagal! Format file tidak didukung. Tolong upload gambar JPG, PNG, atau WEBP saja.");
+                                btnSimpan.disabled = false;
+                                btnSimpan.innerText = 'Simpan Resep';
+                                return;
+                            }
+
+                            btnSimpan.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengupload Gambar...';
+                            
+                            const fileExt = selectedFile.name.split('.').pop();
+                            const fileName = `${Date.now()}.${fileExt}`;
+
+                            const { data: uploadData, error: uploadError } = await supabaseClient
+                                .storage
+                                .from('resep_images')
+                                .upload(fileName, selectedFile);
+
+                            if (uploadError) {
+                                alert("Gagal upload gambar: " + uploadError.message);
+                                throw uploadError;
+                            }
+
+                            const { data: urlData } = supabaseClient
+                                .storage
+                                .from('resep_images')
+                                .getPublicUrl(fileName);
+
+                            finalImageUrl = urlData.publicUrl; 
+                        }
+
+                        btnSimpan.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan Resep...';
+
+                        // INSERT DATA KE TABEL RESEP
+                        const { data, error } = await supabaseClient
+                            .from('resep')
+                            .insert([
+                                { 
+                                    nama_resep: judul,
+                                    kategori_usia: selectedKategoriUmur,
+                                    kategori_alergi: selectedKategoriAlergi,
+                                    waktu_masak: waktu,
+                                    kalori: kalori || '-',
+                                    protein: protein || '-',
+                                    lemak: lemak || '-',
+                                    zat_besi: besi || '-',
+                                    bahan_bahan: bahanArray,
+                                    cara_membuat: cara,
+                                    image_url: finalImageUrl, 
+                                    rating: 0 
+                                }
+                            ]);
+
+                        if (error) throw error;
+                        
+                        alert("Berhasil! Resep beserta gambarnya sudah tersimpan.");
+                        
+                        // Otomatis pindah ke halaman admin setelah sukses simpan
+                        window.location.href = 'resep_admin.html';
+
+                    } catch (error) {
+                        console.error(error);
+                        alert("Gagal menyimpan data: " + error.message);
+                        btnSimpan.disabled = false;
+                        btnSimpan.innerText = 'Simpan Resep';
+                    }
+                });
+            }
+
+        });
+    </script>
+</body>
+</html>

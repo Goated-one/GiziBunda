@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiziBunda - Manajemen Artikel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        // ===== GLOBAL SUPABASE CLIENT & AUTH GUARD =====
+        const SUPABASE_URL = "https://zmnrusboixvljkhyisuu.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptbnJ1c2JvaXh2bGpraHlpc3V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODMyNjIsImV4cCI6MjA5NDA1OTI2Mn0.73-guULNTIoFZinP_OijbR9E6qPJ4d2hGLwFZSLtEjw";
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        supabaseClient.auth.getSession().then(function(result) {
+            if (!result.data.session) {
+                window.location.replace("login_admin.html");
+            }
+        });
+
+        window.handleLogout = async function() {
+            if (!confirm("Yakin mau logout bray?")) return;
+            await supabaseClient.auth.signOut();
+            window.location.replace("login_admin.html");
+        };
+    </script>
+
+    <style>
+        :root {
+            --primary-teal: #23a495;
+            --light-teal: #eef8f6;
+            --bg-gray: #f8f9fa;
+            --card-gray: #e0e0e0;
+            --text-dark: #333333;
+            --text-muted: #777777;
+            --tag-green: #7cb342;
+            --tag-yellow: #fbc02d;
+            --tag-blue: #29b6f6;
+            --danger-red: #e53935;
+        }
+
+        html { background-color: #ffffff; color: var(--text-dark); }
+        body { display: flex; background-color: #ffffff; color: var(--text-dark); height: 100vh; overflow: hidden; }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; } 
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; } 
+        ::-webkit-scrollbar-thumb { background: var(--primary-teal); border-radius: 10px; } 
+
+        .main-content::-webkit-scrollbar { width: 8px; height: 8px; }
+        .main-content::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .main-content::-webkit-scrollbar-thumb { background: var(--primary-teal); border-radius: 10px; }
+
+        .sidebar {
+            width: 260px; background-color: var(--primary-teal); display: flex; flex-direction: column;
+            justify-content: space-between; padding: 30px 20px; border-top-right-radius: 30px;
+            border-bottom-right-radius: 30px; height: 100%; flex-shrink: 0;
+        }
+        .sidebar-top h2 { color: #d4e157; font-size: 28px; font-weight: 700; margin-bottom: 40px; padding-left: 15px; }
+        .menu-list { list-style: none; }
+        .menu-item { margin-bottom: 10px; list-style: none; }
+        .menu-item a {
+            display: flex; align-items: center; gap: 15px; color: #ffffff; text-decoration: none;
+            padding: 12px 15px; font-size: 16px; font-weight: 500; border-radius: 10px; transition: all 0.3s ease;
+        }
+        .menu-item a:hover { background-color: rgba(255, 255, 255, 0.1); }
+        .menu-item.active a { background-color: #ffffff; color: var(--primary-teal); font-weight: 600; }
+
+        .logout-btn {
+            background-color: var(--danger-red); color: white; border: none; padding: 12px;
+            border-radius: 12px; width: 100%; display: flex; align-items: center; justify-content: center;
+            gap: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s;
+        }
+        .logout-btn:hover { background-color: #c62828; }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; height: 100%; overflow-y: auto; }
+
+        .topbar {
+            display: flex; justify-content: space-between; align-items: center; padding: 15px 40px;
+            background-color: white; border-bottom: 1px solid #eeeeee;
+        }
+        .search-container { position: relative; width: 500px; }
+        .search-container i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .search-container input {
+            width: 100%; padding: 10px 10px 10px 45px; border-radius: 25px; border: none;
+            background-color: #e0e0e0; font-size: 14px; outline: none;
+        }
+        .topbar-right { display: flex; align-items: center; gap: 25px; }
+        .notification-btn { background: none; border: none; font-size: 20px; color: var(--text-dark); cursor: pointer; }
+        .profile-icon { font-size: 32px; color: var(--text-dark); cursor: pointer; }
+
+        .content-container { padding: 30px 40px; display: flex; flex-direction: column; gap: 30px; }
+        .header-section { display: flex; justify-content: space-between; align-items: center; }
+        .header-section h1 { font-size: 24px; font-weight: 600; }
+        .add-recipe-btn {
+            background-color: var(--tag-green); color: white; border: none; padding: 10px 20px;
+            border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer; display: flex;
+            align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.3s;
+        }
+        .add-recipe-btn:hover { background-color: #689f38; transform: translateY(-2px);}
+
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .stat-card {
+            background-color: var(--card-gray); border-radius: 15px; padding: 20px;
+            display: flex; flex-direction: column; gap: 5px; position: relative;
+        }
+        .stat-badge { align-self: flex-start; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; color: white; }
+        .badge-total { background-color: var(--primary-teal); }
+        .badge-nutrisi { background-color: var(--tag-yellow); color: #333; }
+        .badge-kesehatan { background-color: var(--tag-blue); }
+        .stat-number { font-size: 64px; font-weight: 700; line-height: 1; margin-top: 5px; }
+        .stat-card.total .stat-number { color: var(--primary-teal); }
+        .stat-card.range-nutrisi .stat-number { color: var(--tag-yellow); }
+        .stat-card.range-kesehatan .stat-number { color: var(--tag-blue); }
+
+        .table-wrapper {
+            background-color: var(--card-gray); border-radius: 20px; padding: 20px;
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        
+        .table-header-tools { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; }
+
+        .filter-dropdown-container { display: flex; align-items: center; gap: 15px; }
+        .filter-label { font-weight: 600; color: var(--text-dark); font-size: 14px;}
+        .heboh-dropdown { position: relative; width: 200px; user-select: none; }
+        .heboh-select {
+            display: flex; justify-content: space-between; align-items: center;
+            background: linear-gradient(135deg, var(--primary-teal), var(--tag-green));
+            color: white; padding: 10px 20px; border-radius: 25px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(35, 164, 149, 0.3); transition: all 0.3s ease;
+        }
+        .heboh-select:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(35, 164, 149, 0.5); }
+        .heboh-select .drop-icon { transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .heboh-select .drop-icon.rotate { transform: rotate(-180deg); }
+        .heboh-options {
+            position: absolute; top: calc(100% + 10px); left: 0; width: 100%;
+            background-color: white; border-radius: 15px; list-style: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 99; overflow: hidden;
+            opacity: 0; visibility: hidden; transform: translateY(-15px) scale(0.95);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .heboh-options.show { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+        .heboh-options li {
+            padding: 12px 20px; font-size: 13px; font-weight: 500; color: var(--text-dark);
+            cursor: pointer; transition: 0.2s; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 10px;
+        }
+        .heboh-options li:hover { background-color: var(--light-teal); color: var(--primary-teal); padding-left: 25px; }
+        
+        @keyframes fadeInRow { from { opacity: 0; transform: translateX(-15px); } to { opacity: 1; transform: translateX(0); } }
+        .animated-row { animation: fadeInRow 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        .pagination-info { font-size: 14px; color: var(--text-dark); display: flex; align-items: center; gap: 15px; }
+        .nav-arrow { cursor: pointer; color: var(--text-dark); transition: color 0.3s;}
+        .nav-arrow:hover { color: var(--primary-teal); }
+        .nav-arrow.disabled { color: #ccc; cursor: not-allowed; }
+
+        .custom-table { width: 100%; border-collapse: collapse; background-color: #e0e0e0; }
+        .custom-table th { text-align: left; font-size: 13px; color: var(--text-dark); font-weight: 500; padding: 10px 15px; border-bottom: 2px solid #cccccc; }
+        .custom-table td { padding: 15px; vertical-align: middle; background-color: #e0e0e0; border-bottom: 1px solid #cccccc; }
+
+        .recipe-img { width: 65px; height: 65px; border-radius: 12px; object-fit: cover; background-color: #b0bec5; }
+        .recipe-title { font-size: 15px; font-weight: 600; color: var(--text-dark); max-width: 250px; }
+
+        .age-badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; color: white; text-align: center; }
+        .age-nutrisi { background-color: var(--tag-yellow); color: #333; }
+        .age-kesehatan { background-color: var(--tag-blue); }
+        .age-psikologi { background-color: #ab47bc; }
+
+        .cook-time { font-size: 14px; color: var(--text-dark); }
+        .action-container { display: flex; gap: 15px; justify-content: flex-end; font-size: 16px; }
+        .action-btn { background: none; border: none; cursor: pointer; transition: transform 0.2s; }
+        .action-btn:hover { transform: scale(1.2); }
+        .btn-edit { color: var(--text-muted); }
+        .btn-edit:hover { color: var(--primary-teal); }
+        .btn-delete { color: var(--danger-red); }
+
+        .table-footer-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 10px; font-size: 14px; }
+        .page-num { padding: 4px 12px; cursor: pointer; color: var(--text-dark); border-radius: 8px; font-weight: 500; transition: 0.2s;}
+        .page-num:hover { background-color: #d5d5d5; }
+        .page-num.active { background-color: var(--primary-teal); color: white; }
+        .page-num.disabled { color: #ccc; cursor: not-allowed; background-color: transparent; }
+
+        /* ================= POPUP MODAL OVERLAY EDIT RESEP ================= */
+        .modal-overlay { display: none; position: fixed; box-sizing: border-box; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); align-items: center; justify-content: center; z-index: 1000; }
+        #editor h1 { font-size: 2em; font-weight: bold; margin-bottom: 0.5em; }
+        #editor h2 { font-size: 1.5em; font-weight: bold; margin-bottom: 0.5em; }
+        #editor ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+        #editor ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1rem; }
+        #editor p { margin-bottom: 0.75rem; }
+        #editor:empty:before { content: attr(data-placeholder); color: #9ca3af; background-color: transparent; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <h2>GiziBunda</h2>
+            <ul class="menu-list">
+                <li class="menu-item"><a href="admin_home.html"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
+                <li class="menu-item"><a href="resep_admin.html"><i class="fa-solid fa-utensils"></i> Resep</a></li>
+                <li class="menu-item active"><a href="artikel_admin.html"><i class="fa-solid fa-book-open"></i> Artikel</a></li>
+            </ul>
+        </div>
+        <button class="logout-btn" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div class="search-container">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchInput" placeholder="Cari artikel gizi bray...">
+            </div>
+            <div class="topbar-right">
+                <button class="notification-btn"><i class="fa-regular fa-bell"></i></button>
+                <i class="fa-solid fa-circle-user profile-icon"></i>
+            </div>
+        </header>
+
+        <section class="content-container">
+            <div class="header-section">
+                <h1>Manajemen Artikel</h1>
+                <button class="add-recipe-btn" onclick="window.location.href='tambah-artikel.html'">
+                    <i class="fa-solid fa-circle-plus"></i> Tambah Artikel Baru
+                </button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card total">
+                    <span class="stat-badge badge-total">Total Artikel</span>
+                    <span class="stat-number" id="countTotal">0</span> 
+                </div>
+                <div class="stat-card range-6-8">
+                    <span class="stat-badge badge-nutrisi">Nutrisi</span>
+                    <span class="stat-number" id="countNutrisi">0</span>
+                </div>
+                <div class="stat-card range-8-12">
+                    <span class="stat-badge badge-kesehatan">Kesehatan</span>
+                    <span class="stat-number" id="countKesehatan">0</span>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <div class="table-header-tools">
+                    <div class="filter-dropdown-container">
+                        <span class="filter-label">Filter:</span>
+                        <div class="heboh-dropdown">
+                            <div class="heboh-select" onclick="toggleDropdown(event)">
+                                <span><i class="fa-solid fa-filter"></i> <span id="selectedFilterText">Semua Kategori</span></span>
+                                <i class="fa-solid fa-chevron-down drop-icon" id="dropIcon"></i>
+                            </div>
+                            <ul class="heboh-options" id="filterOptions">
+                                <li onclick="applyFilter('Semua', 'Semua Kategori')"><i class="fa-solid fa-layer-group"></i> Semua Kategori</li>
+                                <li onclick="applyFilter('Nutrisi', 'Nutrisi')"><i class="fa-solid fa-bowl-food"></i> Nutrisi</li>
+                                <li onclick="applyFilter('Kesehatan', 'Kesehatan')"><i class="fa-solid fa-heart-pulse"></i> Kesehatan</li>
+                                <li onclick="applyFilter('Psikologi', 'Psikologi')"><i class="fa-solid fa-brain"></i> Psikologi</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="pagination-info">
+                        <span id="tableInfo">Memuat artikel...</span>
+                        <i class="fa-solid fa-chevron-left nav-arrow" id="btnPrevTop" onclick="changePage(currentPage - 1)"></i>
+                        <i class="fa-solid fa-chevron-right nav-arrow" id="btnNextTop" onclick="changePage(currentPage + 1)"></i>
+                    </div>
+                </div>
+
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 12%;">Foto</th>
+                            <th style="width: 50%;">Judul Artikel</th>
+                            <th style="width: 18%;">Kategori</th>
+                            <th style="width: 12%;">Waktu Baca</th>
+                            <th style="width: 8%; text-align: right;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr><td colspan="5" style="text-align: center; padding: 20px;">Mengambil data...</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="table-footer-pagination" id="paginationBottom"></div>
+            </div>
+        </section>
+    </main>
+
+    <div id="modalEditArtikel" class="modal-overlay">
+        <div class="bg-[#f3f4f6] p-8 rounded-2xl w-[90%] max-w-[1000px] max-h-[90vh] overflow-y-auto relative shadow-2xl text-left">
+            <span class="absolute top-4 right-6 text-3xl font-bold text-gray-500 hover:text-red-600 cursor-pointer" onclick="tutupModal()">&times;</span>
+            <h2 class="text-xl font-bold text-gray-800 mb-6">Edit Artikel</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-6 bg-[#d1d5db] p-6 rounded-2xl flex flex-col space-y-5">
+                    <div>
+                        <h3 class="text-gray-700 font-medium mb-2 text-sm">Media</h3>
+                        <div class="border-2 border-dashed border-gray-400 rounded-xl p-6 bg-white flex flex-col items-center justify-center text-center cursor-pointer relative min-h-[160px]">
+                            <input type="file" id="editFotoArtikel" class="absolute inset-0 opacity-0 cursor-pointer" accept="image/*">
+                            <div class="bg-[#15803d] text-white p-2.5 rounded-xl mb-2">
+                                <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+                            </div>
+                            <span class="text-sm font-bold text-emerald-800">Ganti foto artikel</span>
+                            <span class="text-[10px] text-gray-400">Kosongkan jika tidak ingin diganti</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <h3 class="text-gray-700 font-medium text-sm flex items-center gap-1.5"><i class="fa-solid fa-circle-info"></i> Informasi</h3>
+                        <input type="text" id="editJudul" placeholder="Judul artikel" class="w-full px-4 py-2.5 rounded-xl border-none text-sm outline-none focus:ring-2 focus:ring-teal-500">
+                        <input type="text" id="editPenulis" placeholder="Nama penulis" class="w-full px-4 py-2.5 rounded-xl border-none text-sm outline-none focus:ring-2 focus:ring-teal-500">
+                        
+                        <div>
+                            <span class="text-xs font-semibold text-gray-600 block mb-1">Kategori artikel</span>
+                            <div class="flex gap-2">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="editKategori" value="Nutrisi" id="radNutrisi" class="hidden peer">
+                                    <span class="px-5 py-1.5 bg-white text-gray-500 text-xs font-medium rounded-full border border-gray-200 peer-checked:bg-teal-600 peer-checked:text-white block shadow-sm">Nutrisi</span>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="editKategori" value="Kesehatan" id="radKesehatan" class="hidden peer">
+                                    <span class="px-5 py-1.5 bg-white text-gray-500 text-xs font-medium rounded-full border border-gray-200 peer-checked:bg-teal-600 peer-checked:text-white block shadow-sm">Kesehatan</span>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="editKategori" value="Psikologi" id="radPsikologi" class="hidden peer">
+                                    <span class="px-5 py-1.5 bg-white text-gray-500 text-xs font-medium rounded-full border border-gray-200 peer-checked:bg-teal-600 peer-checked:text-white block shadow-sm">Psikologi</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="relative w-1/2">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 text-sm"><i class="fa-regular fa-clock"></i></span>
+                            <input type="text" id="editWaktuBaca" placeholder="Waktu Baca Artikel" class="w-full pl-9 pr-4 py-2.5 rounded-xl border-none text-sm outline-none focus:ring-2 focus:ring-teal-500">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-6 flex flex-col justify-between">
+                    <div class="bg-[#d1d5db] p-6 rounded-2xl flex-1 flex flex-col">
+                        <h3 class="text-gray-700 font-medium mb-2 text-sm">Isi artikel</h3>
+                        <div class="bg-white rounded-xl border border-gray-300 flex-1 flex flex-col overflow-hidden min-h-[300px]">
+                            <div class="flex flex-wrap items-center justify-between gap-y-2 px-3 py-2 border-b border-gray-200 bg-gray-50 text-gray-600 text-sm">
+                                <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                    <div class="flex space-x-1">
+                                        <button type="button" onclick="formatDoc('bold')" class="hover:text-black font-bold px-2 py-0.5 rounded hover:bg-gray-200">B</button>
+                                        <button type="button" onclick="formatDoc('italic')" class="hover:text-black italic px-2 py-0.5 rounded hover:bg-gray-200">I</button>
+                                        <button type="button" onclick="formatDoc('underline')" class="hover:text-black underline px-2 py-0.5 rounded hover:bg-gray-200">U</button>
+                                    </div>
+                                    <div class="h-4 w-[1px] bg-gray-300"></div>
+                                    <select onchange="formatDoc('fontName', this.value); this.selectedIndex=0;" class="bg-white border border-gray-300 rounded px-1.5 py-0.5 text-xs outline-none">
+                                        <option value="" disabled selected>Font</option>
+                                        <option value="Poppins">Poppins</option>
+                                        <option value="Arial">Arial</option>
+                                    </select>
+                                    <button type="button" onclick="formatDoc('insertUnorderedList')" class="hover:text-black px-2 py-0.5 rounded hover:bg-gray-200"><i class="fa-solid fa-list-ul"></i></button>
+                                </div>
+                            </div>
+                            <div id="editor" contenteditable="true" data-placeholder="Ketik isi artikel..." class="w-full flex-1 p-4 overflow-y-auto outline-none text-sm min-h-[220px] bg-white"></div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button type="button" id="btnUpdateArtikel" onclick="updateArtikelSupabase()" class="w-full bg-[#0d9488] text-white py-3.5 rounded-xl font-bold text-lg hover:bg-[#0f766e] transition shadow-md">
+                            Simpan Perubahan Artikel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFilteredData = [];
+        let currentPage = 1;
+        const itemsPerPage = 5; 
+        let currentCategoryFilter = 'Semua';
+        let currentSearchQuery = '';
+
+        let idArtikelAktif = null;
+        let imageUrlAktif = null;
+
+        async function loadData() {
+            try {
+                const { data, error } = await supabaseClient.from('articles').select('*').order('created_at', { ascending: false });
+                if (error) throw error;
+                
+                allArticlesData = data;
+
+                document.getElementById('countTotal').innerText = data.length;
+                document.getElementById('countNutrisi').innerText = data.filter(a => a.tag === 'Nutrisi').length;
+                document.getElementById('countKesehatan').innerText = data.filter(a => a.tag === 'Kesehatan').length;
+                
+                filterAndRenderData();
+            } catch (error) {
+                document.getElementById('tableBody').innerHTML = '<tr><td colspan="5" style="color:red; text-align:center; padding: 20px;">Gagal mengambil data dari database.</td></tr>';
+            }
+        }
+        
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            currentSearchQuery = e.target.value.trim().toLowerCase();
+            filterAndRenderData();
+        });
+
+        function filterAndRenderData() {
+            let filtered = allArticlesData;
+            if (currentCategoryFilter !== 'Semua') {
+                filtered = filtered.filter(a => a.tag === currentCategoryFilter);
+            }
+            if (currentSearchQuery !== '') {
+                filtered = filtered.filter(a => a.title && a.title.toLowerCase().includes(currentSearchQuery));
+            }
+            currentFilteredData = filtered;
+            currentPage = 1; 
+            renderTable();
+            renderPagination();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = ''; 
+            const totalItems = currentFilteredData.length;
+            
+            if(totalItems === 0) {
+                document.getElementById('tableInfo').innerText = `Tidak ada data`;
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 30px; color: grey;"><i class="fa-solid fa-folder-open" style="font-size: 30px; margin-bottom: 10px;"></i><br>Artikel tidak ditemukan.</td></tr>';
+                return;
+            }
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const dataToRender = currentFilteredData.slice(startIndex, endIndex);
+            const showEnd = Math.min(endIndex, totalItems);
+            document.getElementById('tableInfo').innerText = `Menampilkan ${startIndex + 1}-${showEnd} dari ${totalItems} artikel`;
+
+            let delayCount = 0;
+            dataToRender.forEach(item => {
+                let badgeClass = 'age-badge';
+                if(item.tag === 'Nutrisi') badgeClass += ' age-nutrisi';
+                else if(item.tag === 'Kesehatan') badgeClass += ' age-kesehatan';
+                else if(item.tag === 'Psikologi') badgeClass += ' age-psikologi';
+
+                const imgUrl = (item.image_url && item.image_url !== "") ? item.image_url : 'https://via.placeholder.com/65x65';
+
+                const row = `
+                    <tr class="animated-row" style="animation-delay: ${delayCount}s">
+                        <td><img src="${imgUrl}" alt="Artikel" class="recipe-img"></td>
+                        <td class="recipe-title" style="font-weight:600;">${item.title}</td>
+                        <td><span class="${badgeClass}">${item.tag || 'Nutrisi'}</span></td>
+                        <td class="cook-time">${item.waktu_baca ? item.waktu_baca + ' menit' : '-'}</td>
+                        <td>
+                            <div class="action-container">
+                                <button class="action-btn btn-edit" onclick="bukaModalEdit('${item.id}')" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                                <button class="action-btn btn-delete" onclick="hapusArtikel('${item.id}')" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+                delayCount += 0.05; 
+            });
+
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            document.getElementById('btnPrevTop').classList.toggle('disabled', currentPage === 1);
+            document.getElementById('btnNextTop').classList.toggle('disabled', currentPage === totalPages);
+        }
+
+        function renderPagination() {
+            const paginationContainer = document.getElementById('paginationBottom');
+            paginationContainer.innerHTML = '';
+            const totalPages = Math.ceil(currentFilteredData.length / itemsPerPage);
+            if (totalPages <= 1) return; 
+
+            const prevBtn = document.createElement('span');
+            prevBtn.className = `page-num ${currentPage === 1 ? 'disabled' : ''}`;
+            prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+            prevBtn.onclick = () => changePage(currentPage - 1);
+            paginationContainer.appendChild(prevBtn);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('span');
+                pageBtn.className = `page-num ${i === currentPage ? 'active' : ''}`;
+                pageBtn.innerText = i;
+                pageBtn.onclick = () => changePage(i);
+                paginationContainer.appendChild(pageBtn);
+            }
+
+            const nextBtn = document.createElement('span');
+            nextBtn.className = `page-num ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+            nextBtn.onclick = () => changePage(currentPage + 1);
+            paginationContainer.appendChild(nextBtn);
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(currentFilteredData.length / itemsPerPage);
+            if (page < 1 || page > totalPages) return; 
+            currentPage = page;
+            renderTable();
+            renderPagination();
+        }
+
+        function toggleDropdown(event) {
+            event.stopPropagation();
+            document.getElementById('filterOptions').classList.toggle('show');
+            document.getElementById('dropIcon').classList.toggle('rotate');
+        }
+
+        function applyFilter(filterValue, textName) {
+            document.getElementById('selectedFilterText').innerText = textName;
+            document.getElementById('filterOptions').classList.remove('show');
+            document.getElementById('dropIcon').classList.remove('rotate');
+            currentCategoryFilter = filterValue; 
+            filterAndRenderData(); 
+        }
+
+        window.onclick = function(e) {
+            const dropdown = document.querySelector('.heboh-dropdown');
+            if (dropdown && !dropdown.contains(e.target)) {
+                document.getElementById('filterOptions').classList.remove('show');
+                document.getElementById('dropIcon').classList.remove('rotate');
+            }
+        }
+
+        async function hapusArtikel(id) {
+            const confirmDelete = confirm("Hapus artikel ini secara permanen bray?");
+            if (confirmDelete) {
+                try {
+                    const { error } = await supabaseClient.from('articles').delete().eq('id', id);
+                    if (error) throw error;
+                    alert("Artikel berhasil dihapus bray!");
+                    loadData(); 
+                } catch (error) {
+                    alert("Gagal menghapus artikel: " + error.message);
+                }
+            }
+        }
+
+        const modal = document.getElementById("modalEditArtikel");
+        function tutupModal() { modal.style.display = "none"; }
+
+        function formatDoc(cmd, value = null) {
+            document.execCommand(cmd, false, value);
+            document.getElementById('editor').focus();
+        }
+
+        async function bukaModalEdit(id) {
+            idArtikelAktif = id;
+            modal.style.display = "flex";
+            try {
+                const { data, error } = await supabaseClient.from('articles').select('*').eq('id', id).single();
+                if (error) throw error;
+                
+                imageUrlAktif = data.image_url;
+                document.getElementById('editJudul').value = data.title || '';
+                document.getElementById('editPenulis').value = data.author || ''; 
+                document.getElementById('editWaktuBaca').value = data.waktu_baca || '';
+                document.getElementById('editor').innerHTML = data.content || '';
+                
+                if (data.tag === 'Nutrisi') document.getElementById('radNutrisi').checked = true;
+                else if (data.tag === 'Kesehatan') document.getElementById('radKesehatan').checked = true;
+                else if (data.tag === 'Psikologi') document.getElementById('radPsikologi').checked = true;
+                else document.getElementById('radNutrisi').checked = true;
+
+                document.getElementById('editFotoArtikel').value = '';
+            } catch(error) {
+                alert("Gagal memuat detail artikel bray: " + error.message);
+                tutupModal();
+            }
+        }
+
+        async function updateArtikelSupabase() {
+            const btnUpdate = document.getElementById('btnUpdateArtikel');
+            const judul = document.getElementById('editJudul').value.trim();
+            const kontenHtml = document.getElementById('editor').innerHTML.trim();
+            
+            const radioTerpilih = document.querySelector('input[name="editKategori"]:checked');
+            const tag = radioTerpilih ? radioTerpilih.value : 'Nutrisi';
+
+            const fileBaru = document.getElementById('editFotoArtikel').files[0];
+
+            if (!judul || !kontenHtml || kontenHtml === '<br>') {
+                alert("Judul dan isi artikel tidak boleh kosong!");
+                return;
+            }
+
+            btnUpdate.innerText = 'Menyimpan Perubahan...';
+            btnUpdate.disabled = true;
+
+            try {
+                let finalImageUrl = imageUrlAktif;
+
+                if (fileBaru) {
+                    const ext = fileBaru.name.split('.').pop();
+                    const fileName = `edit_art_${Date.now()}.${ext}`;
+                    const { error: uploadError } = await supabaseClient.storage.from('articles_images').upload(fileName, fileBaru);
+                    if (uploadError) throw uploadError;
+
+                    const { data: urlData } = supabaseClient.storage.from('articles_images').getPublicUrl(fileName);
+                    finalImageUrl = urlData.publicUrl;
+                }
+
+                const penulisBaru = document.getElementById('editPenulis').value.trim();
+                const waktuBacaBaru = parseInt(document.getElementById('editWaktuBaca').value.replace(/[^0-9]/g, '')) || null;
+
+                const { error: updateError } = await supabaseClient.from('articles').update({
+                    title: judul,
+                    tag: tag,
+                    content: kontenHtml,
+                    image_url: finalImageUrl,
+                    author: penulisBaru || 'Tim Medis GiziBunda',
+                    waktu_baca: waktuBacaBaru
+                }).eq('id', idArtikelAktif);
+
+                if (updateError) throw updateError;
+
+                alert("Artikel berhasil diperbarui!");
+                tutupModal();
+                loadData();
+
+            } catch (error) {
+                alert("Gagal merubah data artikel: " + error.message);
+            } finally {
+                btnUpdate.innerText = 'Simpan Perubahan Artikel';
+                btnUpdate.disabled = false;
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", loadData);
+    </script>
+</body>
+</html>

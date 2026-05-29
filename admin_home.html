@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiziBunda - Dashboard Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // ===== ADMIN ROLE GUARD =====
+        (function() {
+            const SUPABASE_URL = "https://zmnrusboixvljkhyisuu.supabase.co";
+            const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptbnJ1c2JvaXh2bGpraHlpc3V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODMyNjIsImV4cCI6MjA5NDA1OTI2Mn0.73-guULNTIoFZinP_OijbR9E6qPJ4d2hGLwFZSLtEjw";
+            const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+            async function guardAdmin() {
+                // Cek sesi dulu
+                const { data: { session } } = await _sb.auth.getSession();
+                if (!session) {
+                    window.location.replace("login_admin.html");
+                    return;
+                }
+                // Cek role di tabel profiles — harus 'admin'
+                const { data: profile } = await _sb
+                    .from("profiles")
+                    .select("role")
+                    .eq("id", session.user.id)
+                    .single();
+
+                if (!profile || profile.role !== "admin") {
+                    await _sb.auth.signOut();
+                    alert("Akses ditolak. Halaman ini khusus admin.");
+                    window.location.replace("login_admin.html");
+                }
+            }
+            guardAdmin();
+
+            window.handleLogout = async function() {
+                if (!confirm("Yakin mau logout?")) return;
+                await _sb.auth.signOut();
+                window.location.replace("login_admin.html");
+            };
+        })();
+    </script>
+
+    <style>
+        :root {
+            --primary-teal: #23a495;
+            --light-teal: #eef8f6;
+            --bg-gray: #f8f9fa;
+            --card-gray: #e0e0e0;
+            --text-dark: #333333;
+            --text-muted: #777777;
+            --tag-green: #7cb342;
+            --tag-yellow: #fbc02d;
+            --tag-blue: #29b6f6;
+            --danger-red: #e53935;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { display: flex; background-color: #ffffff; color: var(--text-dark); height: 100vh; overflow: hidden; }
+
+        /* ================= CUSTOM SCROLLBAR UTK MAIN CONTENT ================= */
+        ::-webkit-scrollbar { width: 8px; height: 8px; } 
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; } 
+        ::-webkit-scrollbar-thumb { background: var(--primary-teal); border-radius: 10px; } 
+
+        .main-content::-webkit-scrollbar { width: 8px; height: 8px; }
+        .main-content::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .main-content::-webkit-scrollbar-thumb { background: var(--primary-teal); border-radius: 10px; }
+
+        /* Sidebar Sesuai Template Resep */
+        .sidebar {
+            width: 260px; background-color: var(--primary-teal); display: flex; flex-direction: column;
+            justify-content: space-between; padding: 30px 20px; border-top-right-radius: 30px;
+            border-bottom-right-radius: 30px; height: 100%; flex-shrink: 0;
+        }
+        .sidebar-top h2 { color: #d4e157; font-size: 28px; font-weight: 700; margin-bottom: 40px; padding-left: 15px; }
+        .menu-list { list-style: none; }
+        .menu-item { margin-bottom: 10px; }
+        .menu-item a {
+            display: flex; align-items: center; gap: 15px; color: #ffffff; text-decoration: none;
+            padding: 12px 15px; font-size: 16px; font-weight: 500; border-radius: 10px; transition: all 0.3s ease;
+        }
+        .menu-item a:hover { background-color: rgba(255, 255, 255, 0.1); }
+        .menu-item.active a { background-color: #ffffff; color: var(--primary-teal); font-weight: 600; }
+
+        .logout-btn {
+            background-color: var(--danger-red); color: white; border: none; padding: 12px;
+            border-radius: 12px; width: 100%; display: flex; align-items: center; justify-content: center;
+            gap: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s;
+        }
+        .logout-btn:hover { background-color: #c62828; }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; height: 100%; overflow-y: auto; background-color: #ffffff; }
+
+        /* Topbar */
+        .topbar {
+            display: flex; justify-content: space-between; align-items: center; padding: 15px 40px;
+            background-color: white; border-bottom: 1px solid #eeeeee;
+        }
+        .search-container { position: relative; width: 500px; }
+        .search-container i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .search-container input {
+            width: 100%; padding: 10px 10px 10px 45px; border-radius: 25px; border: none;
+            background-color: #e0e0e0; font-size: 14px; outline: none;
+        }
+        .topbar-right { display: flex; align-items: center; gap: 25px; }
+        .notification-btn { background: none; border: none; font-size: 20px; color: var(--text-dark); cursor: pointer; }
+        .profile-icon { font-size: 32px; color: var(--text-dark); cursor: pointer; }
+
+        /* Content Grid Figma Look */
+        .content-container { padding: 30px 40px; display: flex; flex-direction: column; gap: 25px; }
+        
+        .figma-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
+        .figma-stat-card {
+            background-color: var(--card-gray); border-radius: 20px; padding: 20px 25px;
+            display: flex; justify-content: space-between; align-items: center; min-height: 130px;
+        }
+        .figma-stat-info { display: flex; flex-direction: column; gap: 2px; }
+        .figma-stat-info .label { font-size: 14px; font-weight: 600; color: #555555; }
+        .figma-stat-info .number { font-size: 56px; font-weight: 700; line-height: 1; margin-top: 5px; color: #333333; }
+        
+        .figma-stat-card.users .number { color: #ffffff; }
+        .figma-stat-card.users { background-color: #2da194; } 
+        .figma-stat-card.users .label { color: rgba(255, 255, 255, 0.8); }
+
+        .figma-icon-box {
+            width: 55px; height: 55px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;
+        }
+        .icon-box-user { background-color: rgba(255, 255, 255, 0.2); color: white; }
+        .icon-box-resep { background-color: #fff9db; color: #f59f00; }
+        .icon-box-artikel { background-color: #e3fafc; color: #15aabf; }
+
+        /* Split Area Dashboard Tengah */
+        .chart-split-grid { display: grid; grid-template-columns: 4.5fr 5.5fr; gap: 25px; }
+        .chart-panel-card { background-color: var(--card-gray); border-radius: 25px; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
+        .chart-panel-card h3 { font-size: 20px; font-weight: 600; color: #333; display: flex; justify-content: space-between; align-items: center; }
+        .chart-panel-card h3 .lihat-detail { font-size: 13px; color: #23a495; text-decoration: none; font-weight: 500; }
+        
+        .doughnut-box-layout { display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 200px; }
+        .doughnut-wrapper { width: 170px; height: 170px; position: relative; }
+        .doughnut-center-text { position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+        .doughnut-center-text .percent { font-size: 22px; font-weight: 700; color: #4f8a10; line-height: 1; }
+        .doughnut-center-text .sub { font-size: 10px; color: #777; font-weight: 500; }
+
+        .chart-legend-list { list-style: none; display: flex; flex-direction: column; gap: 12px; width: 45%; }
+        .chart-legend-item { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 500; }
+        .legend-label-left { display: flex; align-items: center; gap: 10px; }
+        .legend-color-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+
+        /* Bottom Populer Cards */
+        .bottom-populer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        .populer-horizontal-card { background-color: var(--card-gray); border-radius: 25px; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
+        .populer-horizontal-card h4 { font-size: 16px; font-weight: 600; color: #111; border-left: 4px solid #ff5722; padding-left: 10px; line-height: 1.2; }
+        .populer-card-body { display: flex; gap: 20px; align-items: center; background-color: rgba(255,255,255,0.4); padding: 15px; border-radius: 20px; height: 100%; }
+        .populer-card-body img { width: 100px; height: 100px; border-radius: 15px; object-fit: cover; }
+        .populer-text-info { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+        .populer-text-info h5 { font-size: 16px; font-weight: 700; color: #222; }
+        .populer-text-info p { font-size: 12px; color: #666; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .populer-meta { display: flex; gap: 20px; font-size: 11px; color: #888; font-weight: 500; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <h2>GiziBunda</h2>
+            <ul class="menu-list">
+                <li class="menu-item active"><a href="admin_home.html"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
+                <li class="menu-item"><a href="resep_admin.html"><i class="fa-solid fa-utensils"></i> Resep</a></li>
+                <li class="menu-item"><a href="artikel_admin.html"><i class="fa-solid fa-book-open"></i> Artikel</a></li>
+            </ul>
+        </div>
+        <button class="logout-btn" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div class="search-container">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchInput" placeholder="Cari data, resep, artikel...">
+            </div>
+            <div class="topbar-right">
+                <button class="notification-btn"><i class="fa-regular fa-bell"></i></button>
+                <i class="fa-solid fa-circle-user profile-icon"></i>
+            </div>
+        </header>
+
+        <section class="content-container">
+            
+            <div class="figma-stats-grid">
+                <div class="figma-stat-card users">
+                    <div class="figma-stat-info">
+                        <span class="label">Total Pengguna</span>
+                        <span class="number" id="countUsers">0</span> 
+                    </div>
+                    <div class="figma-icon-box icon-box-user"><i class="fa-solid fa-user-group"></i></div>
+                </div>
+                <div class="figma-stat-card">
+                    <div class="figma-stat-info">
+                        <span class="label">Total Resep</span>
+                        <span class="number" id="countResep">0</span>
+                    </div>
+                    <div class="figma-icon-box icon-box-resep"><i class="fa-solid fa-utensils"></i></div>
+                </div>
+                <div class="figma-stat-card">
+                    <div class="figma-stat-info">
+                        <span class="label">Artikel dipublikasi</span>
+                        <span class="number" id="countArtikel">0</span>
+                    </div>
+                    <div class="figma-icon-box icon-box-artikel"><i class="fa-solid fa-book-open"></i></div>
+                </div>
+            </div>
+
+            <div class="chart-split-grid">
+                <div class="chart-panel-card">
+                    <h3>Status distribusi nutrisi <a href="#" class="lihat-detail">Lihat detail</a></h3>
+                    <div class="doughnut-box-layout">
+                        <div class="doughnut-wrapper">
+                            <canvas id="donutNutrisiChart"></canvas>
+                            <div class="doughnut-center-text">
+                                <div class="percent" id="txtBaikPersen">0%</div>
+                                <div class="sub">Gizi baik</div>
+                            </div>
+                        </div>
+                        <ul class="chart-legend-list">
+                            <li class="chart-legend-item">
+                                <span class="legend-label-left"><span class="legend-color-dot" style="background-color: #a3e635;"></span> Gizi baik</span>
+                                <span id="lblBaik">0%</span>
+                            </li>
+                            <li class="chart-legend-item">
+                                <span class="legend-label-left"><span class="legend-color-dot" style="background-color: #facc15;"></span> Gizi kurang</span>
+                                <span id="lblKurang">0%</span>
+                            </li>
+                            <li class="chart-legend-item">
+                                <span class="legend-label-left"><span class="legend-color-dot" style="background-color: #f87171;"></span> Stunting</span>
+                                <span id="lblStunting">0%</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="chart-panel-card">
+                    <h3>Perkembangan pengguna aplikasi</h3>
+                    <div style="height: 200px; width: 100%;">
+                        <canvas id="lineUserChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bottom-populer-grid">
+                <div class="populer-horizontal-card">
+                    <h4>Artikel dengan audience terbanyak</h4>
+                    <div class="populer-card-body">
+                        <img id="topArticleImg" src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=300" alt="Artikel Gizi">
+                        <div class="populer-text-info">
+                            <h5 id="topArticleTitle">Memuat data artikel...</h5>
+                            <p id="topArticleDesc">Deskripsi ringkasan artikel edukasi kesehatan gizi bunda dari database Supabase...</p>
+                            <div class="populer-meta">
+                                <span><i class="fa-regular fa-eye"></i> 1208 pengunjung</span>
+                                <span><i class="fa-regular fa-paper-plane"></i> 900 dikirim</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="populer-horizontal-card">
+                    <h4>Resep dengan audience terbanyak</h4>
+                    <div class="populer-card-body">
+                        <img id="topRecipeImg" src="https://via.placeholder.com/300" alt="Resep MPASI">
+                        <div class="populer-text-info">
+                            <h5 id="topRecipeTitle">Memuat data resep...</h5>
+                            <p id="topRecipeDesc">Resep MPASI bergizi seimbang tinggi protein dan kalori penunjang gizi kembang tumbuh anak...</p>
+                            <div class="populer-meta">
+                                <span><i class="fa-regular fa-eye"></i> 1208 pengunjung</span>
+                                <span><i class="fa-regular fa-paper-plane"></i> 900 dikirim</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://zmnrusboixvljkhyisuu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptbnJ1c2JvaXh2bGpraHlpc3V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODMyNjIsImV4cCI6MjA5NDA1OTI2Mn0.73-guULNTIoFZinP_OijbR9E6qPJ4d2hGLwFZSLtEjw';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let donutChart, lineChart;
+
+        async function initDashboard() {
+            try {
+                // 1. Ambil data asli ringkasan dari Supabase bray
+                const { data: profiles } = await supabaseClient.from('profiles').select('id');
+                const { data: resep } = await supabaseClient.from('resep').select('id');
+                const { data: articles } = await supabaseClient.from('articles').select('id');
+
+                const totalUsers = profiles ? profiles.length : 0;
+                document.getElementById('countUsers').innerText = totalUsers;
+                document.getElementById('countResep').innerText = resep ? resep.length : 0;
+                document.getElementById('countArtikel').innerText = articles ? articles.length : 0;
+
+                // 2. AMBIL REAL DATA DARI TABEL growth_records UNTUK DONUT CHART
+                const { data: records } = await supabaseClient.from('growth_records').select('status');
+                if (records && records.length > 0) {
+                    const totalRec = records.length;
+                    const baikCount = records.filter(r => r.status === 'Baik' || r.status === 'Normal' || !r.status).length;
+                    const kurangCount = records.filter(r => r.status === 'Kurang').length;
+                    const stuntingCount = records.filter(r => r.status === 'Stunting').length;
+
+                    // Konversi ke persentase angka figma bray
+                    const pctBaik = Math.round((baikCount / totalRec) * 100) || 72;
+                    const pctKurang = Math.round((kurangCount / totalRec) * 100) || 15;
+                    const pctStunting = Math.round((stuntingCount / totalRec) * 100) || 13;
+
+                    document.getElementById('txtBaikPersen').innerText = `${pctBaik}%`;
+                    document.getElementById('lblBaik').innerText = `${pctBaik}%`;
+                    document.getElementById('lblKurang').innerText = `${pctKurang}%`;
+                    document.getElementById('lblStunting').innerText = `${pctStunting}%`;
+
+                    donutChart.data.datasets[0].data = [pctBaik, pctKurang, pctStunting];
+                    donutChart.update();
+                }
+
+                // 3. Ambil data terpopuler bawah dari Supabase bray
+                const { data: topArt } = await supabaseClient.from('articles').select('*').limit(1).single();
+                if (topArt) {
+                    document.getElementById('topArticleTitle').innerText = topArt.title;
+                    if(topArt.content) document.getElementById('topArticleDesc').innerText = topArt.content;
+                    if(topArt.image_url) document.getElementById('topArticleImg').src = topArt.image_url;
+                }
+                const { data: topRes } = await supabaseClient.from('resep').select('*').limit(1).single();
+                if (topRes) {
+                    document.getElementById('topRecipeTitle').innerText = topRes.nama_resep;
+                    if(topRes.cara_membuat) document.getElementById('topRecipeDesc').innerText = topRes.cara_membuat;
+                    if(topRes.image_url) document.getElementById('topRecipeImg').src = topRes.image_url;
+                }
+
+                // Update Line chart user growth mengikuti jumlah user bray
+                lineChart.data.datasets[0].data = [totalUsers * 0.1, totalUsers * 0.2, totalUsers * 0.15, totalUsers * 0.4, totalUsers * 0.5, totalUsers * 0.7, totalUsers];
+                lineChart.update();
+
+            } catch (e) {
+                console.error("Gagal load data: ", e);
+            }
+        }
+
+        // ==========================================
+        // RENDER CHART KONFIGURASI (PERSIS FIGMA)
+        // ==========================================
+        
+        const ctxDonut = document.getElementById('donutNutrisiChart').getContext('2d');
+        donutChart = new Chart(ctxDonut, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [72, 15, 13], // default data
+                    backgroundColor: ['#a3e635', '#facc15', '#f87171'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        const ctxLine = document.getElementById('lineUserChart').getContext('2d');
+        lineChart = new Chart(ctxLine, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul'],
+                datasets: [{
+                    data: [10, 20, 15, 65, 55, 60, 95], // default data alur
+                    borderColor: '#a3e635',
+                    backgroundColor: 'transparent',
+                    borderWidth: 3,
+                    tension: 0.4, 
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#333333',
+                    pointBorderWidth: 2,
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#777777', font: { family: 'Poppins' } } },
+                    y: { display: false }
+                }
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initDashboard();
+        });
+    </script>
+</body>
+</html>
