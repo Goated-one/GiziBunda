@@ -22,7 +22,7 @@
                 // Cek sesi dulu
                 const { data: { session } } = await _sb.auth.getSession();
                 if (!session) {
-                    window.location.replace("login_admin.html");
+                    window.location.replace("index.html");
                     return;
                 }
                 // Cek role di tabel profiles — harus 'admin'
@@ -35,7 +35,7 @@
                 if (!profile || profile.role !== "admin") {
                     await _sb.auth.signOut();
                     alert("Akses ditolak. Halaman ini khusus admin.");
-                    window.location.replace("login_admin.html");
+                    window.location.replace("index.html");
                 }
             }
             guardAdmin();
@@ -43,7 +43,7 @@
             window.handleLogout = async function() {
                 if (!confirm("Yakin mau logout?")) return;
                 await _sb.auth.signOut();
-                window.location.replace("login_admin.html");
+                window.location.replace("index.html");
             };
         })();
     </script>

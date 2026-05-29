@@ -20,14 +20,14 @@
 
         supabaseClient.auth.getSession().then(function(result) {
             if (!result.data.session) {
-                window.location.replace("login_admin.html");
+                window.location.replace("index.html");
             }
         });
 
         window.handleLogout = async function() {
             if (!confirm("Yakin mau logout bray?")) return;
             await supabaseClient.auth.signOut();
-            window.location.replace("login_admin.html");
+            window.location.replace("index.html");
         };
     </script>
 
