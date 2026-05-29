@@ -9,7 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
@@ -45,16 +44,12 @@
             --danger-red: #e53935;
         }
 
-        html { background-color: #ffffff; color: var(--text-dark); }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
         body { display: flex; background-color: #ffffff; color: var(--text-dark); height: 100vh; overflow: hidden; }
 
         ::-webkit-scrollbar { width: 8px; height: 8px; } 
         ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; } 
         ::-webkit-scrollbar-thumb { background: var(--primary-teal); border-radius: 10px; } 
-
-        .main-content::-webkit-scrollbar { width: 8px; height: 8px; }
-        .main-content::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-        .main-content::-webkit-scrollbar-thumb { background: var(--primary-teal); border-radius: 10px; }
 
         .sidebar {
             width: 260px; background-color: var(--primary-teal); display: flex; flex-direction: column;
@@ -63,7 +58,7 @@
         }
         .sidebar-top h2 { color: #d4e157; font-size: 28px; font-weight: 700; margin-bottom: 40px; padding-left: 15px; }
         .menu-list { list-style: none; }
-        .menu-item { margin-bottom: 10px; list-style: none; }
+        .menu-item { margin-bottom: 10px; }
         .menu-item a {
             display: flex; align-items: center; gap: 15px; color: #ffffff; text-decoration: none;
             padding: 12px 15px; font-size: 16px; font-weight: 500; border-radius: 10px; transition: all 0.3s ease;
@@ -78,7 +73,7 @@
         }
         .logout-btn:hover { background-color: #c62828; }
 
-        .main-content { flex: 1; display: flex; flex-direction: column; height: 100%; overflow-y: auto; }
+        .main-content { flex: 1; display: flex; flex-direction: column; height: 100%; overflow-y: auto; background-color: #ffffff; }
 
         .topbar {
             display: flex; justify-content: space-between; align-items: center; padding: 15px 40px;
@@ -161,7 +156,7 @@
         .nav-arrow.disabled { color: #ccc; cursor: not-allowed; }
 
         .custom-table { width: 100%; border-collapse: collapse; background-color: #e0e0e0; }
-        .custom-table th { text-align: left; font-size: 13px; color: var(--text-dark); font-weight: 500; padding: 10px 15px; border-bottom: 2px solid #cccccc; }
+        .custom-table th { text-align: left; font-size: 13px; color: var(--text-dark); font-weight: 600; padding: 10px 15px; border-bottom: 2px solid #cccccc; }
         .custom-table td { padding: 15px; vertical-align: middle; background-color: #e0e0e0; border-bottom: 1px solid #cccccc; }
 
         .recipe-img { width: 65px; height: 65px; border-radius: 12px; object-fit: cover; background-color: #b0bec5; }
@@ -186,8 +181,23 @@
         .page-num.active { background-color: var(--primary-teal); color: white; }
         .page-num.disabled { color: #ccc; cursor: not-allowed; background-color: transparent; }
 
-        /* ================= POPUP MODAL OVERLAY EDIT RESEP ================= */
-        .modal-overlay { display: none; position: fixed; box-sizing: border-box; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); align-items: center; justify-content: center; z-index: 1000; }
+        /* ================= POPUP MODAL OVERLAY EDIT ARTIKEL MURNI CSS ================= */
+        .modal-overlay { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); align-items: center; justify-content: center; }
+        .modal-content { background-color: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .close-modal { position: absolute; top: 20px; right: 25px; font-size: 28px; font-weight: bold; color: var(--text-muted); cursor: pointer; transition: 0.3s; }
+        .close-modal:hover { color: var(--danger-red); }
+        .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: var(--text-dark); }
+        .form-control { width: 100%; padding: 10px 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 13px; font-family: 'Poppins', sans-serif; outline: none; background-color: #f9f9f9; }
+        .form-control:focus { border-color: var(--primary-teal); background-color: white; }
+        
+        /* CSS Untuk Editor Artikel */
+        .editor-toolbar { display: flex; gap: 5px; background: #f1f1f1; padding: 8px; border: 1px solid #ccc; border-bottom: none; border-radius: 8px 8px 0 0; }
+        .editor-toolbar button, .editor-toolbar select { padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; background: white; cursor: pointer; font-size: 13px; }
+        .editor-toolbar button:hover { background: #e0e0e0; }
+        #editor { border-radius: 0 0 8px 8px; border-top: none; }
+        
         #editor h1 { font-size: 2em; font-weight: bold; margin-bottom: 0.5em; }
         #editor h2 { font-size: 1.5em; font-weight: bold; margin-bottom: 0.5em; }
         #editor ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
@@ -235,11 +245,11 @@
                     <span class="stat-badge badge-total">Total Artikel</span>
                     <span class="stat-number" id="countTotal">0</span> 
                 </div>
-                <div class="stat-card range-6-8">
+                <div class="stat-card range-nutrisi">
                     <span class="stat-badge badge-nutrisi">Nutrisi</span>
                     <span class="stat-number" id="countNutrisi">0</span>
                 </div>
-                <div class="stat-card range-8-12">
+                <div class="stat-card range-kesehatan">
                     <span class="stat-badge badge-kesehatan">Kesehatan</span>
                     <span class="stat-number" id="countKesehatan">0</span>
                 </div>
@@ -291,81 +301,56 @@
     </main>
 
     <div id="modalEditArtikel" class="modal-overlay">
-        <div class="bg-[#f3f4f6] p-8 rounded-2xl w-[90%] max-w-[1000px] max-h-[90vh] overflow-y-auto relative shadow-2xl text-left">
-            <span class="absolute top-4 right-6 text-3xl font-bold text-gray-500 hover:text-red-600 cursor-pointer" onclick="tutupModal()">&times;</span>
-            <h2 class="text-xl font-bold text-gray-800 mb-6">Edit Artikel</h2>
+        <div class="modal-content">
+            <span class="close-modal" onclick="tutupModal()">&times;</span>
+            <h2 style="color: var(--primary-teal); margin-bottom: 10px;"><i class="fa-solid fa-pen-to-square"></i> Edit Artikel</h2>
             
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div class="lg:col-span-6 bg-[#d1d5db] p-6 rounded-2xl flex flex-col space-y-5">
-                    <div>
-                        <h3 class="text-gray-700 font-medium mb-2 text-sm">Media</h3>
-                        <div class="border-2 border-dashed border-gray-400 rounded-xl p-6 bg-white flex flex-col items-center justify-center text-center cursor-pointer relative min-h-[160px]">
-                            <input type="file" id="editFotoArtikel" class="absolute inset-0 opacity-0 cursor-pointer" accept="image/*">
-                            <div class="bg-[#15803d] text-white p-2.5 rounded-xl mb-2">
-                                <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
-                            </div>
-                            <span class="text-sm font-bold text-emerald-800">Ganti foto artikel</span>
-                            <span class="text-[10px] text-gray-400">Kosongkan jika tidak ingin diganti</span>
-                        </div>
+            <div class="modal-grid">
+                <div>
+                    <div class="form-group">
+                        <label>Judul Artikel</label>
+                        <input type="text" id="editJudul" class="form-control" placeholder="Judul artikel">
                     </div>
-
-                    <div class="space-y-3">
-                        <h3 class="text-gray-700 font-medium text-sm flex items-center gap-1.5"><i class="fa-solid fa-circle-info"></i> Informasi</h3>
-                        <input type="text" id="editJudul" placeholder="Judul artikel" class="w-full px-4 py-2.5 rounded-xl border-none text-sm outline-none focus:ring-2 focus:ring-teal-500">
-                        <input type="text" id="editPenulis" placeholder="Nama penulis" class="w-full px-4 py-2.5 rounded-xl border-none text-sm outline-none focus:ring-2 focus:ring-teal-500">
-                        
-                        <div>
-                            <span class="text-xs font-semibold text-gray-600 block mb-1">Kategori artikel</span>
-                            <div class="flex gap-2">
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="editKategori" value="Nutrisi" id="radNutrisi" class="hidden peer">
-                                    <span class="px-5 py-1.5 bg-white text-gray-500 text-xs font-medium rounded-full border border-gray-200 peer-checked:bg-teal-600 peer-checked:text-white block shadow-sm">Nutrisi</span>
-                                </label>
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="editKategori" value="Kesehatan" id="radKesehatan" class="hidden peer">
-                                    <span class="px-5 py-1.5 bg-white text-gray-500 text-xs font-medium rounded-full border border-gray-200 peer-checked:bg-teal-600 peer-checked:text-white block shadow-sm">Kesehatan</span>
-                                </label>
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="editKategori" value="Psikologi" id="radPsikologi" class="hidden peer">
-                                    <span class="px-5 py-1.5 bg-white text-gray-500 text-xs font-medium rounded-full border border-gray-200 peer-checked:bg-teal-600 peer-checked:text-white block shadow-sm">Psikologi</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="relative w-1/2">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 text-sm"><i class="fa-regular fa-clock"></i></span>
-                            <input type="text" id="editWaktuBaca" placeholder="Waktu Baca Artikel" class="w-full pl-9 pr-4 py-2.5 rounded-xl border-none text-sm outline-none focus:ring-2 focus:ring-teal-500">
-                        </div>
+                    <div class="form-group">
+                        <label>Nama Penulis</label>
+                        <input type="text" id="editPenulis" class="form-control" placeholder="Nama penulis">
+                    </div>
+                    <div class="form-group">
+                        <label>Kategori Artikel</label>
+                        <select id="editKategori" class="form-control">
+                            <option value="Nutrisi">Nutrisi</option>
+                            <option value="Kesehatan">Kesehatan</option>
+                            <option value="Psikologi">Psikologi</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Waktu Baca (Hanya angka menit)</label>
+                        <input type="text" id="editWaktuBaca" class="form-control" placeholder="Misal: 5">
+                    </div>
+                    <div class="form-group">
+                        <label>Ganti Foto (Kosongkan jika tidak diganti)</label>
+                        <input type="file" id="editFotoArtikel" class="form-control" accept="image/*">
                     </div>
                 </div>
 
-                <div class="lg:col-span-6 flex flex-col justify-between">
-                    <div class="bg-[#d1d5db] p-6 rounded-2xl flex-1 flex flex-col">
-                        <h3 class="text-gray-700 font-medium mb-2 text-sm">Isi artikel</h3>
-                        <div class="bg-white rounded-xl border border-gray-300 flex-1 flex flex-col overflow-hidden min-h-[300px]">
-                            <div class="flex flex-wrap items-center justify-between gap-y-2 px-3 py-2 border-b border-gray-200 bg-gray-50 text-gray-600 text-sm">
-                                <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                                    <div class="flex space-x-1">
-                                        <button type="button" onclick="formatDoc('bold')" class="hover:text-black font-bold px-2 py-0.5 rounded hover:bg-gray-200">B</button>
-                                        <button type="button" onclick="formatDoc('italic')" class="hover:text-black italic px-2 py-0.5 rounded hover:bg-gray-200">I</button>
-                                        <button type="button" onclick="formatDoc('underline')" class="hover:text-black underline px-2 py-0.5 rounded hover:bg-gray-200">U</button>
-                                    </div>
-                                    <div class="h-4 w-[1px] bg-gray-300"></div>
-                                    <select onchange="formatDoc('fontName', this.value); this.selectedIndex=0;" class="bg-white border border-gray-300 rounded px-1.5 py-0.5 text-xs outline-none">
-                                        <option value="" disabled selected>Font</option>
-                                        <option value="Poppins">Poppins</option>
-                                        <option value="Arial">Arial</option>
-                                    </select>
-                                    <button type="button" onclick="formatDoc('insertUnorderedList')" class="hover:text-black px-2 py-0.5 rounded hover:bg-gray-200"><i class="fa-solid fa-list-ul"></i></button>
-                                </div>
-                            </div>
-                            <div id="editor" contenteditable="true" data-placeholder="Ketik isi artikel..." class="w-full flex-1 p-4 overflow-y-auto outline-none text-sm min-h-[220px] bg-white"></div>
+                <div>
+                    <div class="form-group">
+                        <label>Isi Artikel</label>
+                        <div class="editor-toolbar">
+                            <button type="button" onclick="formatDoc('bold')"><b>B</b></button>
+                            <button type="button" onclick="formatDoc('italic')"><i>I</i></button>
+                            <button type="button" onclick="formatDoc('underline')"><u>U</u></button>
+                            <button type="button" onclick="formatDoc('insertUnorderedList')"><i class="fa-solid fa-list-ul"></i></button>
+                            <select onchange="formatDoc('fontName', this.value); this.selectedIndex=0;">
+                                <option value="" disabled selected>Font</option>
+                                <option value="Poppins">Poppins</option>
+                                <option value="Arial">Arial</option>
+                            </select>
                         </div>
+                        <div id="editor" contenteditable="true" data-placeholder="Ketik isi artikel..." class="form-control" style="height: 250px; overflow-y: auto; background-color: white;"></div>
                     </div>
-                    <div class="mt-4">
-                        <button type="button" id="btnUpdateArtikel" onclick="updateArtikelSupabase()" class="w-full bg-[#0d9488] text-white py-3.5 rounded-xl font-bold text-lg hover:bg-[#0f766e] transition shadow-md">
-                            Simpan Perubahan Artikel
-                        </button>
+                    <div style="text-align: right; margin-top: 15px;">
+                        <button class="add-recipe-btn" id="btnUpdateArtikel" onclick="updateArtikelSupabase()" style="display: inline-flex;"><i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan</button>
                     </div>
                 </div>
             </div>
@@ -381,6 +366,7 @@
 
         let idArtikelAktif = null;
         let imageUrlAktif = null;
+        let allArticlesData = [];
 
         async function loadData() {
             try {
@@ -559,10 +545,8 @@
                 document.getElementById('editWaktuBaca').value = data.waktu_baca || '';
                 document.getElementById('editor').innerHTML = data.content || '';
                 
-                if (data.tag === 'Nutrisi') document.getElementById('radNutrisi').checked = true;
-                else if (data.tag === 'Kesehatan') document.getElementById('radKesehatan').checked = true;
-                else if (data.tag === 'Psikologi') document.getElementById('radPsikologi').checked = true;
-                else document.getElementById('radNutrisi').checked = true;
+                // Set nilai select dropdown dengan mudah bray
+                document.getElementById('editKategori').value = data.tag || 'Nutrisi';
 
                 document.getElementById('editFotoArtikel').value = '';
             } catch(error) {
@@ -576,8 +560,8 @@
             const judul = document.getElementById('editJudul').value.trim();
             const kontenHtml = document.getElementById('editor').innerHTML.trim();
             
-            const radioTerpilih = document.querySelector('input[name="editKategori"]:checked');
-            const tag = radioTerpilih ? radioTerpilih.value : 'Nutrisi';
+            // Ambil data langsung dari dropdown bray
+            const tag = document.getElementById('editKategori').value || 'Nutrisi';
 
             const fileBaru = document.getElementById('editFotoArtikel').files[0];
 
@@ -586,7 +570,7 @@
                 return;
             }
 
-            btnUpdate.innerText = 'Menyimpan Perubahan...';
+            btnUpdate.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan Perubahan...';
             btnUpdate.disabled = true;
 
             try {
@@ -623,7 +607,7 @@
             } catch (error) {
                 alert("Gagal merubah data artikel: " + error.message);
             } finally {
-                btnUpdate.innerText = 'Simpan Perubahan Artikel';
+                btnUpdate.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan';
                 btnUpdate.disabled = false;
             }
         }

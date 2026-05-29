@@ -296,6 +296,13 @@
 
         let donutChart, lineChart;
 
+        // FUNGSI PEMBERSIH TAG HTML BRAY
+        function stripHtmlTags(html) {
+            const div = document.createElement("div");
+            div.innerHTML = html;
+            return div.textContent || div.innerText || "";
+        }
+
         async function initDashboard() {
             try {
                 // 1. Ambil data asli ringkasan dari Supabase bray
@@ -330,17 +337,17 @@
                     donutChart.update();
                 }
 
-                // 3. Ambil data terpopuler bawah dari Supabase bray
+                // 3. Ambil data terpopuler bawah dari Supabase bray (UDAH DIBERSIHIN HTML-NYA)
                 const { data: topArt } = await supabaseClient.from('articles').select('*').limit(1).single();
                 if (topArt) {
                     document.getElementById('topArticleTitle').innerText = topArt.title;
-                    if(topArt.content) document.getElementById('topArticleDesc').innerText = topArt.content;
+                    if(topArt.content) document.getElementById('topArticleDesc').innerText = stripHtmlTags(topArt.content);
                     if(topArt.image_url) document.getElementById('topArticleImg').src = topArt.image_url;
                 }
                 const { data: topRes } = await supabaseClient.from('resep').select('*').limit(1).single();
                 if (topRes) {
                     document.getElementById('topRecipeTitle').innerText = topRes.nama_resep;
-                    if(topRes.cara_membuat) document.getElementById('topRecipeDesc').innerText = topRes.cara_membuat;
+                    if(topRes.cara_membuat) document.getElementById('topRecipeDesc').innerText = stripHtmlTags(topRes.cara_membuat);
                     if(topRes.image_url) document.getElementById('topRecipeImg').src = topRes.image_url;
                 }
 
